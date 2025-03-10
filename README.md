@@ -98,6 +98,6 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## İletişim
 
-Proje Sahibi - [@yourusername](https://twitter.com/yourusername)
+Proje Sahibi - enessaltuntel@gmail.com
 
 Proje Linki: [https://github.com/yourusername/real-estate-valuation](https://github.com/yourusername/real-estate-valuation) 
