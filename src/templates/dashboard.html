@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EmlakAnaliz{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header Section -->
+    <div class="property-header bg-gradient-primary text-white rounded-3 p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 fw-bold mb-0">Mülklerim</h1>
+                <p class="text-white-50 mb-0">Tüm gayrimenkullerinizi ve piyasa analizlerini görüntüleyin</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{{ url_for('add_property') }}" class="btn btn-light">
+                    <i class="fas fa-plus-circle me-2"></i> Yeni Mülk Ekle
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="icon mb-2">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="value">{{ properties|length }}</div>
+                <div class="label">Kayıtlı Mülk</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="icon mb-2">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="value">
+                    {% set total = namespace(value=0) %}
+                    {% for property in properties %}
+                        {% if property.valuations %}
+                            {% set total.value = total.value + property.valuations[0].estimated_value %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ "{:,.0f}".format(total.value).replace(',', '.') }} TL
+                </div>
+                <div class="label">Toplam Değer</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="icon mb-2">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="value">
+                    {% set district_count = namespace(value=0) %}
+                    {% set seen_districts = [] %}
+                    {% for property in properties %}
+                        {% if property.district and property.district not in seen_districts %}
+                            {% set seen_districts = seen_districts + [property.district] %}
+                            {% set district_count.value = district_count.value + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ district_count.value }}
+                </div>
+                <div class="label">Bölge</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="icon mb-2">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="value">
+                    {% set total = namespace(count=0) %}
+                    {% for property in properties %}
+                        {% if property.valuations %}
+                            {% set total.count = total.count + property.valuations|length %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ total.count }}
+                </div>
+                <div class="label">Değerleme</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Properties Grid -->
+    <h4 class="mb-3 fw-bold">Mülk Portföyüm</h4>
+    
+    <div class="row g-3 mb-5">
+        {% if properties %}
+            {% for property in properties %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h5 class="card-title fw-bold">
+                            {{ property.property_type }}
+                            <span class="float-end badge bg-primary rounded-pill">{{ property.size_sqm }}m²</span>
+                        </h5>
+                        <p class="card-text text-muted">
+                            <i class="fas fa-map-marker-alt text-primary me-1"></i>
+                            {{ property.city }}, {{ property.district }}, {{ property.neighborhood }}
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3 g-2">
+                            <div class="col-4 text-center">
+                                <div class="bg-light rounded-3 py-2">
+                                    <div><i class="fas fa-bed text-primary"></i></div>
+                                    <small class="text-muted">{{ property.room_count }} Oda</small>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="bg-light rounded-3 py-2">
+                                    <div><i class="fas fa-building text-primary"></i></div>
+                                    <small class="text-muted">{{ property.building_age }} Yaş</small>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="bg-light rounded-3 py-2">
+                                    <div><i class="fas fa-stairs text-primary"></i></div>
+                                    <small class="text-muted">{{ property.floor_number }}. Kat</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if property.valuations %}
+                        {% set latest_valuation = property.valuations|first %}
+                        <div class="bg-light rounded-3 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="text-muted fs-6">Son Değerleme</span>
+                                    <h5 class="mb-0 fw-bold">{{ "{:,.0f}".format(latest_valuation.estimated_value) }} TL</h5>
+                                </div>
+                                
+                                {% if property.valuations|length > 1 %}
+                                    {% set previous = property.valuations[1] %}
+                                    {% set change = ((latest_valuation.estimated_value - previous.estimated_value) / previous.estimated_value * 100)|round(1) %}
+                                    {% if change > 0 %}
+                                        <span class="badge bg-success rounded-pill">
+                                            <i class="fas fa-arrow-up me-1"></i> {{ change }}%
+                                        </span>
+                                    {% elif change < 0 %}
+                                        <span class="badge bg-danger rounded-pill">
+                                            <i class="fas fa-arrow-down me-1"></i> {{ change|abs }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary rounded-pill">
+                                            0%
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted small" data-timestamp="{{ latest_valuation.valuation_date.isoformat() }}">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ latest_valuation.valuation_date.strftime('%d.%m.%Y %H:%M') }}
+                                </div>
+                                
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 60px; height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                            style="width: {{ (latest_valuation.confidence_score * 100)|round }}%">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ (latest_valuation.confidence_score * 100)|round }}%
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-grid">
+                            <a href="{{ url_for('view_property', property_id=property.id) }}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-chart-bar me-2"></i> Detayları Görüntüle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info border-0 shadow-sm">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="fas fa-info-circle fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h4 class="alert-heading">Henüz mülk eklemediniz!</h4>
+                        <p>Değerleme yapmak için ilk mülkünüzü ekleyin ve yapay zeka destekli değerleme sistemimizin avantajlarından yararlanın.</p>
+                        <hr>
+                        <a href="{{ url_for('add_property') }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i> Mülk Ekle
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Piyasa Analizi Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white pt-4 pb-3 border-0">
+                    <h4 class="card-title fw-bold">Piyasa Analizi</h4>
+                    <p class="text-muted mb-0">Bölgesel ve ulusal emlak piyasası karşılaştırmaları</p>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Karşılaştırmalı Fiyat Trendi -->
+                        <div class="col-md-7">
+                            <div class="card bg-light border-0 h-100">
+                                <div class="card-body p-3">
+                                    <h6 class="card-subtitle mb-3 fw-bold">
+                                        Karşılaştırmalı Fiyat Trendi 
+                                        <span class="text-muted fw-normal small">(Başlangıç: 100)</span>
+                                    </h6>
+                                    <div id="chart-comparative-trend" class="mb-3"></div>
+                                    <div class="row g-2">
+                                        <div class="col-sm-3">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-primary me-2" style="width: 10px; height: 10px;"></span>
+                                                <small id="district-change" class="text-nowrap"></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-success me-2" style="width: 10px; height: 10px;"></span>
+                                                <small id="city-change" class="text-nowrap"></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-warning me-2" style="width: 10px; height: 10px;"></span>
+                                                <small id="national-change" class="text-nowrap"></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-danger me-2" style="width: 10px; height: 10px;"></span>
+                                                <small id="inflation-change" class="text-nowrap"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bölgesel Dağılım -->
+                        <div class="col-md-5">
+                            <div class="card bg-light border-0 h-100">
+                                <div class="card-body p-3">
+                                    <h6 class="card-subtitle mb-3 fw-bold">Bölgesel Dağılım</h6>
+                                    <div id="chart-region-distribution"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performans Metrikleri -->
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3">
+                                    <h6 class="card-subtitle mb-3 fw-bold">
+                                        Metrekare Fiyatı
+                                        <span class="badge bg-primary rounded-pill float-end">TL/m²</span>
+                                    </h6>
+                                    <div id="chart-sqm-price"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3">
+                                    <h6 class="card-subtitle mb-3 fw-bold">
+                                        Pazarda Kalma Süresi
+                                        <span class="badge bg-success rounded-pill float-end">Gün</span>
+                                    </h6>
+                                    <div id="chart-market-time"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Varsayılan plotly ayarları
+    const defaultLayout = {
+        font: {
+            family: 'Arial, sans-serif'
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        margin: { t: 10, r: 10, l: 50, b: 60 }
+    };
+    
+    const defaultConfig = {
+        displayModeBar: false,
+        responsive: true
+    };
+    
+    // Karşılaştırmalı Fiyat Trendi
+    fetch('/api/comparative-price-trends')
+        .then(response => response.json())
+        .then(data => {
+            // Bölge verisi
+            const districtTrace = {
+                x: data.months,
+                y: data.district.values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: data.district.name,
+                line: {
+                    color: 'rgb(0, 123, 255)',
+                    width: 3,
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 6
+                }
+            };
+            
+            // Şehir verisi
+            const cityTrace = {
+                x: data.months,
+                y: data.city.values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: data.city.name,
+                line: {
+                    color: 'rgb(40, 167, 69)',
+                    width: 2,
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 5
+                }
+            };
+            
+            // Ulusal veri
+            const nationalTrace = {
+                x: data.months,
+                y: data.national.values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Ulusal Ortalama',
+                line: {
+                    color: 'rgb(255, 193, 7)',
+                    width: 2,
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 5
+                }
+            };
+            
+            // Enflasyon verisi
+            const inflationTrace = {
+                x: data.months,
+                y: data.inflation.values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Enflasyon',
+                line: {
+                    color: 'rgb(220, 53, 69)',
+                    width: 2,
+                    dash: 'dash',
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 5
+                }
+            };
+            
+            const layout = {
+                ...defaultLayout,
+                height: 300,
+                xaxis: {
+                    tickangle: -45,
+                    gridcolor: 'rgba(0,0,0,0.1)',
+                    showgrid: true
+                },
+                yaxis: {
+                    title: 'Fiyat Endeksi',
+                    gridcolor: 'rgba(0,0,0,0.1)',
+                    showgrid: true
+                },
+                legend: {
+                    orientation: 'h',
+                    y: -0.2
+                },
+                hovermode: 'x unified'
+            };
+            
+            Plotly.newPlot('chart-comparative-trend', [districtTrace, cityTrace, nationalTrace, inflationTrace], layout, defaultConfig);
+            
+            // Değişim bilgilerini göster
+            document.getElementById('district-change').innerHTML = `${data.district.name}: ${data.district.change > 0 ? '+' : ''}${data.district.change}%`;
+            document.getElementById('city-change').innerHTML = `${data.city.name}: ${data.city.change > 0 ? '+' : ''}${data.city.change}%`;
+            document.getElementById('national-change').innerHTML = `Ulusal: ${data.national.change > 0 ? '+' : ''}${data.national.change}%`;
+            document.getElementById('inflation-change').innerHTML = `Enflasyon: ${data.inflation.change > 0 ? '+' : ''}${data.inflation.change}%`;
+        });
+    
+    // Bölgesel Dağılım
+    const regionData = {
+        values: [30, 25, 20, 15, 10],
+        labels: ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Maltepe', 'Diğer'],
+        type: 'pie',
+        textinfo: 'percent',
+        hoverinfo: 'label+percent+value',
+        textposition: 'inside',
+        insidetextfont: {
+            color: '#FFFFFF'
+        },
+        marker: {
+            colors: ['#007bff', '#28a745', '#fd7e14', '#dc3545', '#6f42c1']
+        },
+        hole: 0.4
+    };
+    
+    const regionLayout = {
+        ...defaultLayout,
+        height: 300,
+        showlegend: true,
+        legend: {
+            orientation: 'h',
+            y: -0.2
+        },
+        annotations: [{
+            font: {
+                size: 14,
+                color: '#333'
+            },
+            showarrow: false,
+            text: 'Bölgeler',
+            x: 0.5,
+            y: 0.5
+        }]
+    };
+    
+    Plotly.newPlot('chart-region-distribution', [regionData], regionLayout, defaultConfig);
+    
+    // Metrekare Fiyatı Grafiği
+    fetch('/api/metrics/sqm-price')
+        .then(response => response.json())
+        .then(data => {
+            const trace = {
+                x: data.districts,
+                y: data.values,
+                type: 'bar',
+                marker: {
+                    color: '#007bff',
+                    opacity: 0.8,
+                    line: {
+                        color: '#0056b3',
+                        width: 1.5
+                    }
+                }
+            };
+            
+            const layout = {
+                ...defaultLayout,
+                height: 220,
+                barmode: 'group',
+                xaxis: {
+                    tickangle: -45,
+                    gridcolor: 'rgba(0,0,0,0.05)'
+                },
+                yaxis: {
+                    gridcolor: 'rgba(0,0,0,0.1)'
+                }
+            };
+            
+            Plotly.newPlot('chart-sqm-price', [trace], layout, defaultConfig);
+        });
+    
+    // Pazarda Kalma Süresi
+    fetch('/api/metrics/market-time')
+        .then(response => response.json())
+        .then(data => {
+            const trace = {
+                x: data.districts,
+                y: data.values,
+                type: 'bar',
+                marker: {
+                    color: '#28a745',
+                    opacity: 0.8,
+                    line: {
+                        color: '#145523',
+                        width: 1.5
+                    }
+                }
+            };
+            
+            const layout = {
+                ...defaultLayout,
+                height: 220,
+                barmode: 'group',
+                xaxis: {
+                    tickangle: -45,
+                    gridcolor: 'rgba(0,0,0,0.05)'
+                },
+                yaxis: {
+                    gridcolor: 'rgba(0,0,0,0.1)'
+                }
+            };
+            
+            Plotly.newPlot('chart-market-time', [trace], layout, defaultConfig);
+        });
+});
+</script>
+{% endblock %} 

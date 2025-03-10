@@ -1,0 +1,15 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="40" fill="#2c4e9a"/>
+  
+  <!-- Bina simgesi -->
+  <path d="M90 30L40 55V150H140V55L90 30Z" fill="#4f75c9" />
+  <path d="M90 30L65 45V150H115V45L90 30Z" fill="#26a69a" />
+  <rect x="70" y="70" width="15" height="15" rx="2" fill="white" />
+  <rect x="95" y="70" width="15" height="15" rx="2" fill="white" />
+  <rect x="70" y="95" width="15" height="15" rx="2" fill="white" />
+  <rect x="95" y="95" width="15" height="15" rx="2" fill="white" />
+  <rect x="80" y="125" width="20" height="25" fill="white" />
+  
+  <!-- Grafik çizgisi -->
+  <path d="M50 120L70 100L90 110L110 90L130 105" stroke="#ffb74d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+</svg> 

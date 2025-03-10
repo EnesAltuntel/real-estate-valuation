@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Kayıt - EmlakAnaliz{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="container">
+        <div class="row g-0 min-vh-100">
+            <!-- Sol taraf: İlgi çekici görsel ve yazı -->
+            <div class="col-lg-6 d-none d-lg-block bg-gradient-primary text-white auth-image-container">
+                <div class="p-5 d-flex flex-column justify-content-center h-100">
+                    <div class="auth-logo mb-5">
+                        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Logo" height="50">
+                    </div>
+                    <h2 class="display-6 fw-bold mb-4">Emlak Yatırımınız İçin Güçlü Analizler</h2>
+                    <p class="lead mb-5">Hemen ücretsiz hesap oluşturun ve gayrimenkul yatırımlarınız için yapay zeka destekli değerleme sisteminden faydalanın.</p>
+                    <div class="auth-features">
+                        <div class="auth-feature mb-3">
+                            <i class="fas fa-shield-alt me-2"></i> %100 Güvenli kayıt
+                        </div>
+                        <div class="auth-feature mb-3">
+                            <i class="fas fa-bolt me-2"></i> Hızlı ve kolay kullanım
+                        </div>
+                        <div class="auth-feature">
+                            <i class="fas fa-check-circle me-2"></i> Ücretsiz değerleme raporu
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sağ taraf: Kayıt formu -->
+            <div class="col-lg-6 auth-form-container">
+                <div class="p-4 p-md-5 d-flex flex-column justify-content-center h-100">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 fw-bold">Hesap Oluştur</h1>
+                        <p class="text-muted">Gayrimenkul değerleme sistemine kayıt olun</p>
+                    </div>
+
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-body p-4 p-md-5">
+                            <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-posta Adresi</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0">
+                                            <i class="fas fa-envelope text-muted"></i>
+                                        </span>
+                                        <input type="email" class="form-control border-start-0" id="email" name="email" placeholder="ornek@mail.com" required>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        Geçerli bir e-posta adresi giriniz.
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Şifre</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0">
+                                            <i class="fas fa-lock text-muted"></i>
+                                        </span>
+                                        <input type="password" class="form-control border-start-0" id="password" name="password" minlength="8" required>
+                                        <button type="button" class="input-group-text toggle-password bg-light border-start-0" title="Şifreyi göster/gizle">
+                                            <i class="fas fa-eye text-muted"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        <small>Şifre en az 8 karakter olmalıdır</small>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        Şifre en az 8 karakter olmalıdır.
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="password_confirm" class="form-label">Şifre (Tekrar)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0">
+                                            <i class="fas fa-lock text-muted"></i>
+                                        </span>
+                                        <input type="password" class="form-control border-start-0" id="password_confirm" name="password_confirm" required>
+                                        <button type="button" class="input-group-text toggle-password-confirm bg-light border-start-0" title="Şifreyi göster/gizle">
+                                            <i class="fas fa-eye text-muted"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        Şifreler eşleşmiyor.
+                                    </div>
+                                </div>
+                                <div class="mb-4 form-check">
+                                    <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        <small>
+                                            <a href="#" class="text-decoration-none">Kullanım şartlarını</a> ve 
+                                            <a href="#" class="text-decoration-none">gizlilik politikasını</a> kabul ediyorum
+                                        </small>
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        Devam etmek için şartları kabul etmelisiniz.
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        Hesap Oluştur <i class="fas fa-user-plus ms-2"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-0">
+                            Zaten hesabınız var mı? 
+                            <a href="{{ url_for('login') }}" class="fw-bold text-primary">Giriş yapın</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 76px - 230px);
+    }
+    
+    .auth-image-container {
+        position: relative;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0 15px 15px 0;
+        overflow: hidden;
+    }
+    
+    .auth-image-container::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,0.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.3;
+    }
+    
+    .auth-feature {
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .auth-feature i {
+        width: 30px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .auth-form-container {
+        background-color: #fff;
+    }
+    
+    .auth-logo img {
+        filter: brightness(0) invert(1);
+    }
+    
+    .toggle-password, .toggle-password-confirm {
+        cursor: pointer;
+    }
+    
+    .toggle-password:hover, .toggle-password-confirm:hover {
+        background-color: #f8f9fa !important;
+    }
+    
+    @media (max-width: 992px) {
+        .auth-container {
+            min-height: auto;
+            padding: 3rem 0;
+        }
+    }
+    
+    .password-strength {
+        height: 5px;
+        margin-top: 8px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        position: relative;
+    }
+    
+    .password-strength-meter {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    
+    .weak {
+        width: 25%;
+        background-color: #dc3545;
+    }
+    
+    .medium {
+        width: 50%;
+        background-color: #ffc107;
+    }
+    
+    .strong {
+        width: 75%;
+        background-color: #0dcaf0;
+    }
+    
+    .very-strong {
+        width: 100%;
+        background-color: #198754;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
+    const togglePassword = document.querySelector('.toggle-password');
+    const togglePasswordConfirm = document.querySelector('.toggle-password-confirm');
+    const terms = document.getElementById('terms');
+
+    // Password visibility toggle
+    togglePassword.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        // Change icon
+        const eyeIcon = this.querySelector('i');
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+    });
+    
+    // Password confirm visibility toggle
+    togglePasswordConfirm.addEventListener('click', function() {
+        const type = passwordConfirm.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordConfirm.setAttribute('type', type);
+        
+        // Change icon
+        const eyeIcon = this.querySelector('i');
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+    });
+
+    // Email validation
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        let isValid = true;
+
+        // Validate email
+        if (!email.value.trim() || !isValidEmail(email.value)) {
+            email.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            email.classList.remove('is-invalid');
+        }
+
+        // Validate password
+        if (!password.value.trim() || password.value.length < 8) {
+            password.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            password.classList.remove('is-invalid');
+        }
+
+        // Validate password confirmation
+        if (!passwordConfirm.value.trim() || password.value !== passwordConfirm.value) {
+            passwordConfirm.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            passwordConfirm.classList.remove('is-invalid');
+        }
+        
+        // Validate terms
+        if (!terms.checked) {
+            terms.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            terms.classList.remove('is-invalid');
+        }
+
+        if (isValid) {
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Hesap oluşturuluyor...';
+            
+            // Submit form
+            form.submit();
+        }
+    });
+
+    // Real-time password confirmation validation
+    passwordConfirm.addEventListener('input', function() {
+        if (password.value !== this.value) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    // Real-time email validation
+    email.addEventListener('input', function() {
+        if (this.value.trim() && !isValidEmail(this.value)) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+</script>
+{% endblock %} 

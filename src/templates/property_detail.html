@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.property_type }} Detayı - Gayrimenkul Değerleme{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Property Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Mülk Detayı</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-0">{{ property.property_type }}</h1>
+            <p class="lead text-muted">
+                {{ property.city }}, {{ property.district }}, {{ property.neighborhood }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button class="btn btn-primary" onclick="updateValuation()">
+                <i class="fas fa-sync"></i> Değerlemeyi Güncelle
+            </button>
+        </div>
+    </div>
+
+    <!-- Property Details and Latest Valuation -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Mülk Özellikleri</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Alan
+                            <span class="badge bg-primary rounded-pill">{{ property.size_sqm }} m²</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Oda Sayısı
+                            <span class="badge bg-primary rounded-pill">{{ property.room_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Bina Yaşı
+                            <span class="badge bg-primary rounded-pill">{{ property.building_age }} yıl</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Kat
+                            <span class="badge bg-primary rounded-pill">{{ property.floor_number }}. kat</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8 mb-4">
+            {% if valuations %}
+            {% set latest = valuations[0] %}
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Son Değerleme</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2 class="display-4 mb-0">{{ "{:,.0f}".format(latest.estimated_value) }} TL</h2>
+                            
+                            {% if valuations|length > 1 %}
+                            {% set previous = valuations[1] %}
+                            {% set change = ((latest.estimated_value - previous.estimated_value) / previous.estimated_value * 100)|round(1) %}
+                            {% if change > 0 %}
+                            <div class="mt-2">
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-arrow-up"></i> {{ change }}% artış
+                                </span>
+                                <small class="text-muted ms-2">Son değerlemeden bu yana</small>
+                            </div>
+                            {% elif change < 0 %}
+                            <div class="mt-2">
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-arrow-down"></i> {{ change|abs }}% düşüş
+                                </span>
+                                <small class="text-muted ms-2">Son değerlemeden bu yana</small>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                            
+                            <p class="text-muted mt-2" data-timestamp="{{ latest.valuation_date.isoformat() }}">
+                                {{ latest.valuation_date.strftime('%d.%m.%Y') }} tarihinde güncellendi
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-grow-1 me-2">
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ (latest.confidence_score * 100)|round }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="text-muted">{{ (latest.confidence_score * 100)|round }}%</span>
+                            </div>
+                            <small class="text-muted">Güven Skoru</small>
+                            
+                            {% if latest.market_trend > 0 %}
+                            <div class="alert alert-success mt-3">
+                                <i class="fas fa-arrow-up"></i>
+                                Son 3 ayda %{{ "%.1f"|format(latest.market_trend) }} artış
+                            </div>
+                            {% elif latest.market_trend < 0 %}
+                            <div class="alert alert-danger mt-3">
+                                <i class="fas fa-arrow-down"></i>
+                                Son 3 ayda %{{ "%.1f"|format(latest.market_trend|abs) }} düşüş
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-equals"></i>
+                                Fiyat değişimi yok
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Market Analysis -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Piyasa Analizi</h5>
+                    <div id="price-history-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Properties -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h3 class="h4">Benzer Mülkler</h3>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Konum</th>
+                            <th>Alan</th>
+                            <th>Oda</th>
+                            <th>Yaş</th>
+                            <th>Fiyat</th>
+                            <th>m² Fiyatı</th>
+                        </tr>
+                    </thead>
+                    <tbody id="similar-properties">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Yükleniyor...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Valuation History -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h3 class="h4">Değerleme Geçmişi</h3>
+            {% if valuations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Tahmini Değer</th>
+                            <th>Değişim</th>
+                            <th>Güven Skoru</th>
+                            <th>Piyasa Trendi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for valuation in valuations %}
+                        <tr>
+                            <td data-timestamp="{{ valuation.valuation_date.isoformat() }}">{{ valuation.valuation_date.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>{{ "{:,.0f}".format(valuation.estimated_value) }} TL</td>
+                            <td>
+                                {% if loop.index < valuations|length %}
+                                {% set next_val = valuations[loop.index] %}
+                                {% set change = ((valuation.estimated_value - next_val.estimated_value) / next_val.estimated_value * 100)|round(1) %}
+                                {% if change > 0 %}
+                                <span class="text-success">
+                                    <i class="fas fa-arrow-up"></i> {{ change }}%
+                                </span>
+                                {% elif change < 0 %}
+                                <span class="text-danger">
+                                    <i class="fas fa-arrow-down"></i> {{ change|abs }}%
+                                </span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">İlk değerleme</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if valuation.confidence_score < 60 %}bg-danger{% elif valuation.confidence_score < 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ valuation.confidence_score }}%;" 
+                                        aria-valuenow="{{ valuation.confidence_score }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">{{ "%.0f"|format(valuation.confidence_score) }}%</div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if valuation.market_trend > 0 %}
+                                <span class="text-success">
+                                    <i class="fas fa-arrow-up"></i> {{ "%.1f"|format(valuation.market_trend) }}%
+                                </span>
+                                {% elif valuation.market_trend < 0 %}
+                                <span class="text-danger">
+                                    <i class="fas fa-arrow-down"></i> {{ "%.1f"|format(valuation.market_trend|abs) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-equals"></i> 0%
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">Henüz değerleme geçmişi bulunmuyor.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format dates according to user's local timezone
+    document.querySelectorAll('[data-timestamp]').forEach(function(element) {
+        const timestamp = element.getAttribute('data-timestamp');
+        const date = new Date(timestamp);
+        
+        if (element.tagName === 'TD') {
+            // Full datetime format for table cells: DD.MM.YYYY HH:MM
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            element.textContent = `${day}.${month}.${year} ${hours}:${minutes}`;
+        } else {
+            // Date only format for paragraphs
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            
+            element.textContent = `${day}.${month}.${year} tarihinde güncellendi`;
+        }
+    });
+
+    // Load market data
+    fetch(`/api/market-data?city={{ property.city }}&district={{ property.district }}`)
+        .then(response => response.json())
+        .then(data => {
+            // Market data visualization with Plotly
+            const layout = {
+                title: 'Piyasa Fiyat Trendi',
+                xaxis: {
+                    title: 'Tarih',
+                    tickformat: '%d.%m.%Y',
+                    tickangle: -45,
+                    rangeslider: {
+                        visible: true,
+                        thickness: 0.08
+                    },
+                    gridcolor: 'rgba(200, 200, 200, 0.2)',
+                    gridwidth: 1,
+                    showline: true,
+                    linecolor: 'rgba(0, 0, 0, 0.3)',
+                    linewidth: 1,
+                    showspikes: true,
+                    spikemode: 'across',
+                    spikethickness: 1,
+                    spikedash: 'solid',
+                    spikecolor: 'rgba(0, 0, 0, 0.3)'
+                },
+                yaxis: {
+                    title: 'Fiyat (TL)',
+                    tickformat: ',d',
+                    tickprefix: '₺',
+                    hoverformat: ',.0f TL',
+                    gridcolor: 'rgba(200, 200, 200, 0.2)',
+                    gridwidth: 1,
+                    showline: true,
+                    linecolor: 'rgba(0, 0, 0, 0.3)',
+                    linewidth: 1,
+                    fixedrange: false,
+                    showspikes: true,
+                    spikemode: 'across',
+                    spikethickness: 1,
+                    spikedash: 'solid',
+                    spikecolor: 'rgba(0, 0, 0, 0.3)'
+                },
+                yaxis2: {
+                    title: 'm² Fiyatı (TL)',
+                    tickformat: ',d',
+                    tickprefix: '₺',
+                    hoverformat: ',.0f TL/m²',
+                    overlaying: 'y',
+                    side: 'right',
+                    gridcolor: 'rgba(200, 200, 200, 0.2)',
+                    gridwidth: 1,
+                    showline: true,
+                    linecolor: 'rgba(0, 0, 0, 0.3)',
+                    linewidth: 1,
+                    fixedrange: false
+                },
+                legend: {
+                    x: 0.01,
+                    y: 0.99,
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    bordercolor: 'rgba(0, 0, 0, 0.1)',
+                    borderwidth: 1,
+                    orientation: 'h'
+                },
+                margin: { t: 50, r: 70, b: 80, l: 70 },
+                height: 450,
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: '#fff',
+                shapes: [{
+                    type: 'line',
+                    x0: data.dates[0],
+                    y0: data.prices[0],
+                    x1: data.dates[data.dates.length - 1],
+                    y1: data.prices[data.dates.length - 1],
+                    line: {
+                        color: 'rgba(0, 123, 255, 0.3)',
+                        width: 2,
+                        dash: 'dot'
+                    }
+                }],
+                annotations: [{
+                    x: data.dates[data.dates.length - 1],
+                    y: data.prices[data.dates.length - 1],
+                    xref: 'x',
+                    yref: 'y',
+                    text: `${new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 0}).format(data.prices[data.dates.length - 1])} TL`,
+                    showarrow: true,
+                    arrowhead: 3,
+                    ax: 40,
+                    ay: -40
+                }],
+                hovermode: 'x unified',
+                hoverlabel: {
+                    bgcolor: 'rgba(255, 255, 255, 0.9)',
+                    bordercolor: 'rgba(0, 0, 0, 0.1)',
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 12
+                    }
+                },
+                dragmode: 'zoom',
+                modebar: {
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    color: 'rgba(0, 0, 0, 0.7)',
+                    activecolor: 'rgba(0, 123, 255, 1)'
+                },
+                selectdirection: 'any'
+            };
+
+            // Fiyat verilerini hazırla
+            const priceHistoryData = {
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Mülk Tahmini Değeri',
+                x: data.dates,
+                y: data.prices,
+                line: {
+                    color: 'rgb(0, 123, 255)',
+                    width: 3,
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 8,
+                    color: 'rgb(0, 123, 255)',
+                    line: {
+                        color: 'white',
+                        width: 2
+                    }
+                },
+                hovertemplate: '<b>%{y:,.0f} TL</b><br>%{x}<extra></extra>'
+            };
+
+            // m² başına fiyat verilerini hazırla
+            const pricePerSqmData = {
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'm² Başına Fiyat',
+                x: data.dates,
+                y: data.price_per_sqm,
+                yaxis: 'y2',
+                line: {
+                    color: 'rgb(255, 193, 7)',
+                    width: 3,
+                    shape: 'spline'
+                },
+                marker: {
+                    size: 8,
+                    color: 'rgb(255, 193, 7)',
+                    line: {
+                        color: 'white',
+                        width: 2
+                    }
+                },
+                hovertemplate: '<b>%{y:,.0f} TL/m²</b><br>%{x}<extra></extra>'
+            };
+
+            // Grafiği TradingView benzeri etkileşimli özelliklerle güncelleyelim
+            Plotly.react('price-history-chart', [priceHistoryData, pricePerSqmData], layout, {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToAdd: [
+                    'drawline',
+                    'drawopenpath',
+                    'eraseshape'
+                ],
+                modeBarButtonsToRemove: [
+                    'lasso2d',
+                    'select2d'
+                ],
+                scrollZoom: true,
+                doubleClick: 'reset+autosize',
+                toImageButtonOptions: {
+                    format: 'png',
+                    filename: 'piyasa_analizi',
+                    height: 800,
+                    width: 1200,
+                    scale: 2
+                }
+            });
+            
+            // TradingView benzeri etkileşimli özellikler ekleyelim
+            const priceHistoryChart = document.getElementById('price-history-chart');
+            
+            // Etkileşimli fare tekerleği zoom fonksiyonu
+            priceHistoryChart.addEventListener('wheel', function(e) {
+                // Normal değilse engelle
+                if (!e.ctrlKey && !e.shiftKey) return;
+                
+                e.preventDefault();
+                
+                // Mouse pozisyonunu al
+                const plotBox = priceHistoryChart.getBoundingClientRect();
+                const xaxis = 'xaxis';
+                const yaxis = 'yaxis';
+                
+                // Normalize mouse position
+                const xpct = (e.clientX - plotBox.left) / plotBox.width;
+                const ypct = 1 - ((e.clientY - plotBox.top) / plotBox.height);
+                
+                // Mevcut eksen aralıklarını al
+                let currentXRange = [
+                    new Date(data.dates[0]).getTime(), 
+                    new Date(data.dates[data.dates.length - 1]).getTime()
+                ];
+                let currentYRange = [
+                    Math.min(...data.prices) * 0.9,
+                    Math.max(...data.prices) * 1.1
+                ];
+                
+                // Mevcut layout'tan değerleri al
+                try {
+                    if (priceHistoryChart._fullLayout) {
+                        const xRange = priceHistoryChart._fullLayout.xaxis.range;
+                        const yRange = priceHistoryChart._fullLayout.yaxis.range;
+                        
+                        if (xRange && xRange.length === 2) {
+                            currentXRange = [
+                                new Date(xRange[0]).getTime(),
+                                new Date(xRange[1]).getTime()
+                            ];
+                        }
+                        
+                        if (yRange && yRange.length === 2) {
+                            currentYRange = yRange;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Layout değerleri alınamadı', err);
+                }
+                
+                // Zoom faktörü hesapla
+                const direction = e.deltaY < 0 ? -1 : 1;
+                const zoomFactor = direction * 0.05 + 1;
+                
+                // Yeni eksen aralıklarını hesapla
+                const xDiff = currentXRange[1] - currentXRange[0];
+                const yDiff = currentYRange[1] - currentYRange[0];
+                
+                let newXRange, newYRange;
+                
+                if (e.ctrlKey) {
+                    // Ctrl tuşu: Y ekseni zoom
+                    const yMid = currentYRange[0] + (ypct * yDiff);
+                    const newYDiff = yDiff * zoomFactor;
+                    
+                    newXRange = currentXRange;
+                    newYRange = [
+                        yMid - (ypct * newYDiff),
+                        yMid + ((1 - ypct) * newYDiff)
+                    ];
+                } else if (e.shiftKey) {
+                    // Shift tuşu: X ekseni zoom
+                    const xMid = currentXRange[0] + (xpct * xDiff);
+                    const newXDiff = xDiff * zoomFactor;
+                    
+                    newXRange = [
+                        xMid - (xpct * newXDiff),
+                        xMid + ((1 - xpct) * newXDiff)
+                    ];
+                    newYRange = currentYRange;
+                }
+                
+                // Grafiği güncelle
+                const update = {};
+                
+                if (newXRange) {
+                    update['xaxis.range'] = [
+                        new Date(newXRange[0]), 
+                        new Date(newXRange[1])
+                    ];
+                }
+                
+                if (newYRange) {
+                    update['yaxis.range'] = newYRange;
+                }
+                
+                Plotly.relayout('price-history-chart', update);
+            });
+            
+            // Grafik etkileşimi için ekstra CSS düzenlemeleri
+            document.head.insertAdjacentHTML('beforeend', `
+                <style>
+                    #price-history-chart .updatemenu-item:hover {
+                        background-color: rgba(0, 123, 255, 0.1) !important;
+                    }
+                    
+                    #price-history-chart .modebar-btn:hover path {
+                        fill: rgba(0, 123, 255, 1) !important;
+                    }
+                    
+                    #price-history-chart .zoombox {
+                        fill: rgba(0, 123, 255, 0.1) !important;
+                        stroke: rgba(0, 123, 255, 0.4) !important;
+                    }
+                </style>
+            `);
+            
+            // Tooltip bilgi öğeleri için yardımcı açıklama ekle
+            const tooltip = document.createElement('div');
+            tooltip.id = 'chart-tooltip';
+            tooltip.style.cssText = `
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                border-radius: 4px;
+                padding: 8px 12px;
+                font-size: 12px;
+                pointer-events: none;
+                opacity: 0.7;
+                transition: opacity 0.3s;
+            `;
+            tooltip.innerHTML = 'Shift + Fare Tekerleği = Yatay Zoom<br>Ctrl + Fare Tekerleği = Dikey Zoom<br>Fareyle Dikdörtgen Çiz = Belirli Bölgeye Zoom';
+            priceHistoryChart.appendChild(tooltip);
+            
+            // Tooltip'i 5 saniye sonra hafifçe göster/gizle
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                setTimeout(() => tooltip.remove(), 1000);
+            }, 5000);
+        });
+        
+    // Load similar properties
+    loadSimilarProperties();
+});
+
+function updateValuation() {
+    // Show loading state
+    const btn = event.target.closest('button'); // Use closest to handle clicks on the icon inside the button
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
+
+    // Call valuation update API
+    fetch(`/api/update-valuation/{{ property.id }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Başarılı olduğunda sayfayı yenile
+                location.reload();
+            } else {
+                // Hata mesajını göster
+                alert('Güncelleme sırasında bir hata oluştu: ' + data.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            alert('Bir hata oluştu: ' + error);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+}
+
+function loadSimilarProperties() {
+    const tbody = document.getElementById('similar-properties');
+    
+    // Benzer mülkleri getir
+    fetch(`/api/similar-properties/{{ property.id }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.properties.length > 0) {
+                // Tabloyu temizle
+                tbody.innerHTML = '';
+                
+                // Benzer mülkleri tabloya ekle
+                data.properties.forEach(prop => {
+                    const row = `
+                    <tr onclick="window.location='/property/${prop.id}'" style="cursor: pointer;">
+                        <td>${prop.location}</td>
+                        <td>${prop.size_sqm} m²</td>
+                        <td>${prop.room_count}</td>
+                        <td>${prop.building_age} yıl</td>
+                        <td>${new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 0}).format(prop.estimated_value)} TL</td>
+                        <td>${new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 0}).format(prop.price_per_sqm)} TL</td>
+                    </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                // Benzer mülk yoksa mesaj göster
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Benzer mülk bulunamadı</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Benzer mülkler yüklenirken hata oluştu:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Veri yüklenirken hata oluştu</td></tr>';
+        });
+}
+</script>
+{% endblock %} 

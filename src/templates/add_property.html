@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Mülk Ekle - Gayrimenkul Değerleme{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Mülk Ekle</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="h3 mb-4">Yeni Mülk Ekle</h1>
+                    
+                    <form method="POST" action="{{ url_for('add_property') }}">
+                        <!-- Location Information -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">Konum Bilgileri</h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="city" class="form-label">Şehir</label>
+                                    <select class="form-select" id="city" name="city" required>
+                                        <option value="">Seçiniz</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="district" class="form-label">İlçe</label>
+                                    <select class="form-select" id="district" name="district" required disabled>
+                                        <option value="">Seçiniz</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="neighborhood" class="form-label">Mahalle</label>
+                                    <select class="form-select" id="neighborhood" name="neighborhood" required disabled>
+                                        <option value="">Seçiniz</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Property Details -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">Mülk Özellikleri</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="property_type" class="form-label">Mülk Tipi</label>
+                                    <select class="form-select" id="property_type" name="property_type" required>
+                                        <option value="">Seçiniz</option>
+                                        <option value="Daire">Daire</option>
+                                        <option value="Müstakil Ev">Müstakil Ev</option>
+                                        <option value="Villa">Villa</option>
+                                        <option value="Residence">Residence</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="size_sqm" class="form-label">Alan (m²)</label>
+                                    <input type="number" class="form-control" id="size_sqm" name="size_sqm" 
+                                           min="1" step="1" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Details -->
+                        <div class="mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="room_count" class="form-label">Oda Sayısı</label>
+                                    <select class="form-select" id="room_count" name="room_count" required>
+                                        <option value="">Seçiniz</option>
+                                        <option value="1">1+0</option>
+                                        <option value="2">1+1</option>
+                                        <option value="3">2+1</option>
+                                        <option value="4">3+1</option>
+                                        <option value="5">4+1</option>
+                                        <option value="6">5+1</option>
+                                        <option value="7">6+1</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="building_age" class="form-label">Bina Yaşı</label>
+                                    <input type="number" class="form-control" id="building_age" name="building_age" 
+                                           min="0" step="1" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="floor_number" class="form-label">Bulunduğu Kat</label>
+                                    <input type="number" class="form-control" id="floor_number" name="floor_number" 
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle"></i> Mülk Ekle ve Değerle
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Location selector script -->
+<script src="{{ url_for('static', filename='js/location-selector.js') }}"></script>
+
+<!-- Form validation script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        // Basic validation
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (isValid) {
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+            
+            // Submit form
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %} 

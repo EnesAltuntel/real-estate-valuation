@@ -1,0 +1,8 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bina simgesi -->
+  <path d="M16 3L4 10V28H28V10L16 3Z" fill="#2c4e9a" />
+  <path d="M16 3L10 7V28H22V7L16 3Z" fill="#4f75c9" />
+  <rect x="12" y="15" width="3" height="5" rx="1" fill="white" />
+  <rect x="18" y="15" width="3" height="5" rx="1" fill="white" />
+  <rect x="14" y="22" width="5" height="6" fill="white" />
+</svg> 
