@@ -100,4 +100,4 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 Proje Sahibi - enessaltuntel@gmail.com
 
-Proje Linki: [https://github.com/yourusername/real-estate-valuation](https://github.com/yourusername/real-estate-valuation) 
+Proje Linki: https://github.com/EnesAltuntel/real-estate-valuation
