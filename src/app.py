@@ -2,11 +2,42 @@ from flask import Flask, render_template, request, jsonify, flash, redirect, url
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Property, Valuation, ScrapedListing, City, District, Neighborhood, get_all_cities, get_city_districts, get_district_neighborhoods
-from scraper import SahibindenScraper
-from valuation import PropertyValuator
 import os
 from datetime import datetime, timedelta
 import random
+
+# Vercel deploy için conditional imports
+try:
+    from scraper import SahibindenScraper
+    from valuation import PropertyValuator
+    valuator = PropertyValuator()
+except ImportError:
+    # Simplified mock classes for Vercel deployment
+    class SahibindenScraper:
+        def __init__(self): pass
+        def scrape(self, *args, **kwargs): return []
+    
+    class PropertyValuator:
+        def __init__(self): pass
+        def estimate_value(self, property_data):
+            return {
+                'estimated_value': property_data['size_sqm'] * 10000,
+                'confidence_score': 0.7,
+                'market_trend': 0.05
+            }
+        def save_valuation(self, property_id, valuation_result):
+            valuation = Valuation(
+                property_id=property_id,
+                estimated_value=valuation_result['estimated_value'],
+                confidence_score=valuation_result['confidence_score'],
+                market_trend=valuation_result['market_trend'],
+                valuation_date=datetime.utcnow()
+            )
+            db.session.add(valuation)
+            db.session.commit()
+            return valuation
+
+    valuator = PropertyValuator()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -21,7 +52,6 @@ login_manager.login_view = 'login'
 
 # Initialize scraper and valuator
 scraper = SahibindenScraper()
-valuator = PropertyValuator()
 
 @login_manager.user_loader
 def load_user(user_id):
