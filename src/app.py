@@ -673,4 +673,7 @@ def get_comparative_price_trends():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
+
+# Vercel'de çalışması için gerekli
+app.debug = False 
